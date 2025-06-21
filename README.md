@@ -1,4 +1,5 @@
 ¿Qué mide el AQI tradicional? 
+
 El AQI (Índice de Calidad del Aire) tradicional, como lo define la EPA, se basa únicamente en la concentración de los siguientes contaminantes:
 
 PM2.5 (partículas finas)
