@@ -14,15 +14,47 @@ El resultado es un modelo de Machine Learning (XGBoost) que alcanza un **R² = 0
 
 ---
 
+## La aportación más innovadora: el efecto cascada entre Zonas de Bajas Emisiones
+
+En Europa, ciudades como Londres (ULEZ), París (ZFE) o Amsterdam llevan años implementando Zonas de Bajas Emisiones. Sin embargo, existe una pregunta que ningún sistema de monitoreo estándar responde: **cuando restringes el tráfico en una zona, ¿qué le pasa a las zonas vecinas?**
+
+Madrid tiene tres ZBE concéntricas y de diferente intensidad:
+
+```
+┌─────────────────────────────────┐
+│         Madrid ZBE (2022)       │  ← Restringe vehículos sin etiqueta A
+│   ┌─────────────────────────┐   │
+│   │    ZBEDEP Plaza         │   │  ← Restricciones adicionales (dic. 2021)
+│   │    Elíptica             │   │
+│   │  ┌──────────────────┐   │   │
+│   │  │  ZBEDEP Centro   │   │   │  ← Las más estrictas (antiguo Madrid Central)
+│   │  │  (Madrid Central)│   │   │
+│   │  └──────────────────┘   │   │
+│   └─────────────────────────┘   │
+└─────────────────────────────────┘
+```
+
+Este proyecto construye una variable propia —`diferencia_trafico_en_zbe_centro`— que mide **cada día** la diferencia de intensidad de tráfico entre el interior y el exterior de cada ZBE. El análisis de esta variable a lo largo de cuatro años revela algo que los informes oficiales no documentan:
+
+> **Cuando se restringe el acceso a una zona interior, el tráfico no desaparece: se desplaza a la zona inmediatamente exterior.** Este fenómeno, denominado **"efecto frontera"**, es claramente visible en los datos a partir de 2022 con la activación de la Madrid ZBE general. El tráfico en las inmediaciones del límite exterior crece, potencialmente empeorando la calidad del aire precisamente donde vive la mayoría de la población.
+
+Esto tiene implicaciones de política pública directas: **las ZBE pueden mejorar la calidad del aire en el centro a costa de empeorarla en la periferia**, un efecto que los sistemas de monitoreo actuales —que miden cada zona de forma aislada— son incapaces de detectar.
+
+Este análisis, combinado con el resto de las variables del modelo, es lo que hace que el AQI personalizado del proyecto sea más preciso, más justo geográficamente y más útil para la toma de decisiones reales que cualquier índice estándar disponible hoy en Europa.
+
+📓 El análisis completo está en [`VF_Analisis_diferencia_trafico_dentro_fuera_ZBE.ipynb`](VF_Analisis_diferencia_trafico_dentro_fuera_ZBE.ipynb)
+
+---
+
 ## ¿Por qué es innovador en el contexto europeo?
 
 En Europa existen sistemas de monitoreo de calidad del aire bien establecidos (EEA, ACEA, redes nacionales), pero la mayoría de los índices públicos siguen el modelo EPA tradicional: **solo miden contaminantes, no predicen ni contextualizan**.
 
 Este proyecto innova en tres frentes:
 
-1. **AQI dinámico y contextualizado**: El índice se ajusta en función de variables meteorológicas (temperatura, viento, humedad, presión) y de tráfico. Un día con mucho NO₂ pero con viento fuerte tiene un impacto real diferente al mismo nivel en calma atmosférica.
+1. **Análisis del efecto cascada entre ZBE concéntricas**: Se cuantifica por primera vez el impacto que tiene una ZBE sobre las zonas adyacentes, detectando el "efecto frontera" de desplazamiento del tráfico. Ningún sistema europeo de monitoreo actual mide esto.
 
-2. **Análisis del impacto de las Zonas de Bajas Emisiones (ZBE)**: Madrid fue una de las primeras ciudades españolas en implementar restricciones de acceso vehicular por zonas (Madrid Central, Plaza Elíptica, Madrid ZBE). Este proyecto **cuantifica el impacto real de estas políticas** en la calidad del aire usando una variable propia: `diferencia_trafico_en_zbe_centro`.
+2. **AQI dinámico y contextualizado**: El índice se ajusta en función de variables meteorológicas (temperatura, viento, humedad, presión) y de tráfico. Un día con mucho NO₂ pero con viento fuerte tiene un impacto real diferente al mismo nivel en calma atmosférica.
 
 3. **Granularidad geográfica real**: En lugar de un único valor para toda la ciudad, el modelo genera predicciones **por zona geográfica**, reconociendo que el interior de la M-30 se comporta de forma radicalmente distinta al extrarradio sur.
 
@@ -62,22 +94,28 @@ Se definen 5 zonas de análisis (Interior M-30, Sureste, Noreste, Noroeste, Suro
 
 ---
 
-### Etapa 3 — La variable clave: Impacto diferencial de las ZBE en el tráfico
+### Etapa 3 — El análisis clave: Cómo cada ZBE afecta a las demás ⭐
 
 **📓 [`VF_Analisis_diferencia_trafico_dentro_fuera_ZBE.ipynb`](VF_Analisis_diferencia_trafico_dentro_fuera_ZBE.ipynb)**
 
-Este es uno de los análisis más originales del proyecto. Para cada día del periodo estudiado, se calcula la diferencia entre el tráfico medio **dentro** de la ZBE y el tráfico medio **fuera** de la ZBE:
+Este es el análisis más original y relevante del proyecto. Para cada una de las tres ZBE de Madrid y para cada día del periodo 2021–2025, se calcula la diferencia entre el tráfico medio **dentro** y **fuera** de esa zona:
 
 ```
-diferencia_trafico_en_zbe_centro = tráfico_medio_dentro − tráfico_medio_fuera
+diferencia_trafico_en_zbe = tráfico_medio_dentro − tráfico_medio_fuera
 ```
 
-Los resultados son reveladores:
-- La distribución tiende a ser **negativa** (menos tráfico dentro que fuera), coherente con las restricciones de acceso.
-- Durante el **COVID-19 (2020-2021)** la diferencia colapsó hacia cero, ya que el tráfico se redujo homogéneamente en toda la ciudad.
-- En **2022**, con la entrada en vigor de nuevas ZBE, se detecta un posible **"efecto frontera"**: el tráfico se desplaza hacia los límites exteriores.
+Esta variable se analiza con series temporales, medias móviles de 30 días y análisis de distribución, lo que permite observar el comportamiento de cada ZBE en el tiempo y —crucialmente— **la interacción entre zonas concéntricas**.
 
-Esta variable, junto con medias móviles de 30 días para suavizar el ruido diario, se incorpora como predictor en los modelos de Machine Learning.
+Los hallazgos más significativos:
+
+- La diferencia tiende a ser **negativa** de forma sistemática (menos tráfico dentro que fuera), lo que confirma que las restricciones funcionan en la zona donde se aplican.
+- **Efecto COVID-19 (2020-2021)**: la diferencia colapsa hacia cero porque el tráfico cae uniformemente en toda la ciudad, borrando temporalmente el gradiente entre zonas.
+- **Efecto frontera (2022+)**: con la activación de la Madrid ZBE general, la diferencia entre la zona interior y la exterior se amplía, pero los datos del anillo exterior muestran un **aumento relativo de tráfico**. El tráfico restringido en el centro no desaparece: se redistribuye hacia los límites.
+- Los **outliers positivos** (días en que hay más tráfico dentro que fuera) corresponden sistemáticamente a eventos puntuales: obras que cortan vías periféricas, desvíos de tráfico hacia el interior, festividades en zonas exteriores.
+
+> **Para no técnicos**: Imagina que cierras el grifo en el centro: el agua no desaparece, se acumula en la tubería de al lado. Este notebook mide exactamente ese efecto en las calles de Madrid.
+
+Esta variable se incorpora como predictor en los modelos de Machine Learning, aportando información que ninguna fuente de datos existente recoge de forma directa.
 
 ---
 
@@ -172,12 +210,13 @@ Estos clusters se incorporan como variable categórica adicional en el modelo su
 
 ## Resultados principales
 
+- **Efecto frontera entre ZBE cuantificado por primera vez con datos reales**: restricciones en la zona centro generan desplazamiento de tráfico hacia el anillo exterior, con impacto medible en la calidad del aire de zonas periféricas.
 - **AQI personalizado** más preciso y contextualizado que el índice EPA estándar.
 - Modelo XGBoost global: **R² = 0.89**, RMSE = 5.07
 - Modelo XGBoost por zona: **RMSE = 2.76** (mejora significativa por granularidad geográfica)
-- Identificación de **3 perfiles de días** con características ambientales diferenciadas.
-- Evidencia cuantitativa del **impacto de las ZBE** en el tráfico y, transitivamente, en la calidad del aire.
-- Detección del efecto COVID-19 y del efecto frontera en las restricciones de movilidad.
+- Identificación de **3 perfiles de días** con características ambientales diferenciadas mediante K-Means.
+- Evidencia del colapso del gradiente ZBE durante el COVID-19 y de su recuperación progresiva posterior.
+- Detección de outliers de tráfico asociados a eventos puntuales (obras, desvíos, festividades).
 
 ---
 
