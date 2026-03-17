@@ -1,6 +1,6 @@
 # 🌫️ Calidad del Aire en Madrid — AQI Personalizado con Machine Learning
 
-> **Proyecto ganador del Premio al Mejor Proyecto de Data Science** de la promoción · [IMMUNE Technology Institute](https://immune.institute/)
+> **Proyecto ganador del Premio al Mejor Proyecto de Data Science** de la promoción · The Bridge Digital Talent Accelerator
 
 ---
 
@@ -62,7 +62,7 @@ Este proyecto innova en tres frentes:
 
 ## El equipo
 
-Proyecto desarrollado por **Alejandra, Maruxa y Raquel**, como Capstone Project del Bootcamp de Data Science en [IMMUNE Technology Institute](https://immune.institute/) (2025).
+Proyecto desarrollado por **Alejandra, Maruxa y Raquel**, como Capstone Project del Bootcamp de Data Science en The Bridge Digital Talent Accelerator (2025).
 
 ---
 
@@ -222,7 +222,7 @@ Estos clusters se incorporan como variable categórica adicional en el modelo su
 
 ## Reconocimientos
 
-Este proyecto fue reconocido como el **Mejor Proyecto de Data Science de la promoción** en [IMMUNE Technology Institute](https://immune.institute/) (2025).
+Este proyecto fue reconocido como el **Mejor Proyecto de Data Science de la promoción** en The Bridge Digital Talent Accelerator (2025).
 
 ---
 
